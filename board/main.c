@@ -337,7 +337,7 @@ int main(void) {
   }
 
   // init to SILENT and can silent
-  set_safety_mode(SAFETY_SILENT, 0U);
+  set_safety_mode(SAFETY_HKG_ADAS_DRV_INTERCEPTOR, 0U);
 
   // enable CAN TXs
   enable_can_transceivers(true);

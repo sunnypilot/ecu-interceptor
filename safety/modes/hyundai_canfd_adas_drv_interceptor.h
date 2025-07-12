@@ -2,13 +2,14 @@
 
 #include "safety/safety_declarations.h"
 #include "safety/modes/hyundai_canfd.h"
+#include "safety/modes/defaults.h"
 
 #define HYUNDAI_CANFD_ADAS_DRV_SCC_MSGS(bus) \
 {0x1A0, bus, 8, .check_relay = false},  /* CRUISE_BUTTON */   \
 
 #define ADAS_DRV_BUS 2
 #define CAR_BUS 0
-#define COMMA_BUS 1
+#define COMMA_BUS 1 //A1, or L-can
 
 uint32_t sunnypilot_detected_last = 0;
 bool block_adas_drv_ecu = false;
@@ -42,10 +43,18 @@ static int hyundai_canfd_adas_drv_interceptor_tamper_hook(int source_bus, int ad
   return bus_dst;
 }
 
+safety_config hyundai_canfd_adas_interceptor_init(uint16_t param) {
+  UNUSED(param);
+  
+  print("hyundai_canfd_adas_interceptor_init initiailized\n");
+  controls_allowed = true;
+  return (safety_config){NULL, 0, NULL, 0, false}; // NOLINT(readability/braces)
+}
+
 // Note: tx is not used when the message is being forwarded. It's only used when messages are sent from OP
 // but we have a different setup here, and no messages come from OP.
 const safety_hooks hyundai_canfd_adas_drv_interceptor_hooks = {
-  .init = alloutput_init,
+  .init = hyundai_canfd_adas_interceptor_init,
   //.rx = hyundai_canfd_adas_drv_interceptor_rx_hook,
   .tamper = hyundai_canfd_adas_drv_interceptor_tamper_hook,
   // .fwd = hyundai_canfd_adas_drv_interceptor_fwd_hook,
