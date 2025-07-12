@@ -10,9 +10,9 @@
 #include "safety/modes/body.h"
 
 // CAN-FD only safety modes
-//#ifdef CANFD
-//#include "safety/modes/hyundai_canfd.h"
-//#endif
+#ifdef CANFD
+#include "safety/modes/hyundai_canfd_adas_drv_interceptor.h"
+#endif
 
 uint32_t GET_BYTES(const CANPacket_t *msg, int start, int len) {
   uint32_t ret = 0U;
@@ -328,6 +328,7 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
     {SAFETY_ELM327, &elm327_hooks},
     {SAFETY_NOOUTPUT, &nooutput_hooks},
     {SAFETY_BODY, &body_hooks},
+    {SAFETY_HKG_ADAS_DRV_INTERCEPTOR, &hyundai_canfd_adas_drv_interceptor_hooks},
 // #ifdef CANFD
 //     {SAFETY_HYUNDAI_CANFD, &hyundai_canfd_hooks},
 // #endif

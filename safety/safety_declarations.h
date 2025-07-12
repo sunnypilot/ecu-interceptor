@@ -9,7 +9,7 @@
 #define SAFETY_ALLOUTPUT 2U
 #define SAFETY_NOOUTPUT 3U
 #define SAFETY_BODY 4U
-//#define SAFETY_HYUNDAI_CANFD 5U
+#define SAFETY_HKG_ADAS_DRV_INTERCEPTOR 5U
 
 #define GET_BIT(msg, b) ((bool)!!(((msg)->data[((b) / 8U)] >> ((b) % 8U)) & 0x1U))
 #define GET_BYTE(msg, b) ((msg)->data[(b)])
@@ -167,4 +167,4 @@ extern const safety_hooks body_hooks;
 extern const safety_hooks elm327_hooks;
 extern const safety_hooks nooutput_hooks;
 extern const safety_hooks alloutput_hooks;
-//extern const safety_hooks hyundai_canfd_hooks;
+extern const safety_hooks hyundai_canfd_adas_drv_interceptor_hooks;
