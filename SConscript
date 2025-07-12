@@ -1,5 +1,4 @@
 import os
-import opendbc
 import subprocess
 
 PREFIX = "arm-none-eabi-"
@@ -84,7 +83,7 @@ def build_project(project_name, project, extra_flags):
     '..',
     panda_root,
     f"{panda_root}/board/",
-    opendbc.INCLUDE_PATH,
+    f"{panda_root}/safety/",
   ]
 
   env = Environment(
