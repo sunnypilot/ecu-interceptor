@@ -253,8 +253,8 @@ static void tick_handler(void) {
           // clear heartbeat engaged state
           heartbeat_engaged = false;
 
-          if (current_safety_mode != SAFETY_SILENT) {
-            set_safety_mode(SAFETY_SILENT, 0U);
+          if (current_safety_mode != SAFETY_ALLOUTPUT) {
+            set_safety_mode(SAFETY_ALLOUTPUT, 0U);
           }
 
           if (power_save_status != POWER_SAVE_STATUS_ENABLED) {
