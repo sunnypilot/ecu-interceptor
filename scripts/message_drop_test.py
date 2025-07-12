@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import usb1
 import time
 import struct
@@ -9,10 +8,6 @@ from typing import Any
 
 from opendbc.car.structs import CarParams
 from panda import Panda
-
-JUNGLE = "JUNGLE" in os.environ
-if JUNGLE:
-  from panda import PandaJungle
 
 # Generate unique messages
 NUM_MESSAGES_PER_BUS = 10000
@@ -36,16 +31,13 @@ def flood_tx(panda):
 
 if __name__ == "__main__":
   serials = Panda.list()
-  receiver: Panda | PandaJungle
-  if JUNGLE:
-    sender = Panda()
-    receiver = PandaJungle()
-  else:
-    if len(serials) != 2:
-      raise Exception("Connect two pandas to perform this test!")
-    sender = Panda(serials[0])
-    receiver = Panda(serials[1])
-    receiver.set_safety_mode(CarParams.SafetyModel.allOutput)
+  receiver: Panda 
+  if len(serials) != 2:
+    raise Exception("Connect two pandas to perform this test!")
+
+  sender = Panda(serials[0])
+  receiver = Panda(serials[1])
+  receiver.set_safety_mode(CarParams.SafetyModel.allOutput)
 
   sender.set_safety_mode(CarParams.SafetyModel.allOutput)
 

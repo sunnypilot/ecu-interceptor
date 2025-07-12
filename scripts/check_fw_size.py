@@ -89,9 +89,3 @@ if __name__ == "__main__":
   # black panda
   check_space("../board/obj/bootstub.panda.elf", "F4")
   check_space("../board/obj/panda.elf", "F4")
-  # jungle v1
-  check_space("../board/jungle/obj/bootstub.panda_jungle.elf", "F4")
-  check_space("../board/jungle/obj/panda_jungle.elf", "F4")
-  # jungle v2
-  check_space("../board/jungle/obj/bootstub.panda_jungle_h7.elf", "H7")
-  check_space("../board/jungle/obj/panda_jungle_h7.elf", "H7")

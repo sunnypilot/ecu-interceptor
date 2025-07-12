@@ -12,8 +12,15 @@ classifiers = [
   "Topic :: System :: Hardware",
 ]
 dependencies = [
-  "libusb1",
-  "opendbc @ git+https://github.com/commaai/opendbc.git@45bf6c8f548473dece52f780f60bd8e20c32bd65#egg=opendbc",
+    "libusb1",
+    "scons>=4.9.1",
+    "numpy",
+    "Cython",
+    "crcmod",
+    "tqdm",
+    "pycapnp",
+    "setuptools",
+    "pycryptodome",
 ]
 
 [project.optional-dependencies]
