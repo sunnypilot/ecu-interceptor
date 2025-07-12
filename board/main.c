@@ -29,7 +29,8 @@
 #include "can_comms.h"
 #include "main_comms.h"
 
-
+//#define HARDCODED_MODE SAFETY_HKG_ADAS_DRV_INTERCEPTOR
+#define HARDCODED_MODE SAFETY_SILENT
 // ********************* Serial debugging *********************
 
 static bool check_started(void) {
@@ -122,7 +123,8 @@ bool is_car_safety_mode(uint16_t mode) {
   return (mode != SAFETY_SILENT) &&
          (mode != SAFETY_NOOUTPUT) &&
          (mode != SAFETY_ALLOUTPUT) &&
-         (mode != SAFETY_ELM327);
+         (mode != SAFETY_ELM327) &&
+         (mode != HARDCODED_MODE);
 }
 
 // ***************************** main code *****************************
@@ -253,8 +255,8 @@ static void tick_handler(void) {
           // clear heartbeat engaged state
           heartbeat_engaged = false;
 
-          if (current_safety_mode != SAFETY_HKG_ADAS_DRV_INTERCEPTOR) {
-            set_safety_mode(SAFETY_HKG_ADAS_DRV_INTERCEPTOR, 0U);
+          if (current_safety_mode != HARDCODED_MODE) {
+            set_safety_mode(HARDCODED_MODE, 0U);
           }
 
           if (power_save_status != POWER_SAVE_STATUS_ENABLED) {

@@ -7,8 +7,8 @@
 #define HYUNDAI_CANFD_ADAS_DRV_SCC_MSGS(bus) \
 {0x1A0, bus, 8, .check_relay = false},  /* CRUISE_BUTTON */   \
 
-#define ADAS_DRV_BUS 2
-#define CAR_BUS 0
+#define ADAS_DRV_BUS 0
+#define CAR_BUS 2
 #define COMMA_BUS 1 //A1, or L-can
 
 uint32_t sunnypilot_detected_last = 0;
@@ -19,11 +19,15 @@ static const CanMsg HYUNDAI_CANFD_ADAS_DRV_TX_MSGS[] = {
 };
 
 static int hyundai_canfd_adas_drv_interceptor_tamper_hook(int source_bus, int addr, int default_destination_bus) {
-  const int is_scc_msg = addr == 0x1A0;
+  // const int is_scc_msg = addr == 0x1A0 || addr == 0x258 ;
+  const int is_scc_msg = addr == 0x1A0 || addr == 0x258 ;
+  if (!is_scc_msg)
+    return default_destination_bus;
+  
   const uint32_t ts = MICROSECOND_TIMER->CNT;
    
   // Update the last detected timestamp if an SCC message is from CAR_BUS
-  if (source_bus == CAR_BUS && is_scc_msg) {
+  if (source_bus == CAR_BUS && addr == 0x258) { 
     sunnypilot_detected_last = ts;
   }
 
@@ -35,7 +39,7 @@ static int hyundai_canfd_adas_drv_interceptor_tamper_hook(int source_bus, int ad
   block_adas_drv_ecu = (ts_elapsed <= 150000);
 
   // If we are allowed to block, and this is an scc msg coming from ADAS (or somehow we are sending it TO the ADAS) we block
-  block_adas_drv_ecu = block_adas_drv_ecu && is_scc_msg && (source_bus == ADAS_DRV_BUS || bus_dst == ADAS_DRV_BUS);
+  block_adas_drv_ecu = block_adas_drv_ecu && (source_bus == CAR_BUS || bus_dst == ADAS_DRV_BUS);
   if (block_adas_drv_ecu) {
     bus_dst = COMMA_BUS; // Change SCC_CONTROL address to avoid being processed by the car
   }
