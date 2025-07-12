@@ -111,12 +111,14 @@ typedef safety_config (*safety_hook_init)(uint16_t param);
 typedef void (*rx_hook)(const CANPacket_t *to_push);
 typedef bool (*tx_hook)(const CANPacket_t *to_send);  // returns true if the message is allowed
 typedef bool (*fwd_hook)(int bus_num, int addr);      // returns true if the message should be blocked from forwarding
+typedef int (*tamper_hook)(int source_bus, int addr, int calculated_destination);
 
 typedef struct {
   safety_hook_init init;
   rx_hook rx;
   tx_hook tx;
   fwd_hook fwd;
+  tamper_hook tamper;
   get_checksum_t get_checksum;
   compute_checksum_t compute_checksum;
   get_counter_t get_counter;

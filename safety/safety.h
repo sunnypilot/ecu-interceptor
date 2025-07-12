@@ -216,7 +216,12 @@ int safety_fwd_hook(int bus_num, int addr) {
 
   // Block messages that are being checked for relay malfunctions. Safety modes can opt out of this
   // in the case of selective AEB forwarding
-  const int destination_bus = get_fwd_bus(bus_num);
+
+  int destination_bus = get_fwd_bus(bus_num);
+  if (!blocked && (current_hooks->tamper != NULL)) {
+    destination_bus = current_hooks->tamper(bus_num, addr, destination_bus);
+  }
+  
   if (!blocked) {
     for (int i = 0; i < current_safety_config.tx_msgs_len; i++) {
       const CanMsg *m = &current_safety_config.tx_msgs[i];
@@ -225,10 +230,6 @@ int safety_fwd_hook(int bus_num, int addr) {
         break;
       }
     }
-  }
-
-  if (!blocked && (current_hooks->fwd != NULL)) {
-    blocked = current_hooks->fwd(bus_num, addr);
   }
 
   return blocked ? -1 : destination_bus;
@@ -328,10 +329,9 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
     {SAFETY_ELM327, &elm327_hooks},
     {SAFETY_NOOUTPUT, &nooutput_hooks},
     {SAFETY_BODY, &body_hooks},
+#ifdef CANFD
     {SAFETY_HKG_ADAS_DRV_INTERCEPTOR, &hyundai_canfd_adas_drv_interceptor_hooks},
-// #ifdef CANFD
-//     {SAFETY_HYUNDAI_CANFD, &hyundai_canfd_hooks},
-// #endif
+#endif
 #ifdef ALLOW_DEBUG
     {SAFETY_ALLOUTPUT, &alloutput_hooks},
 #endif
