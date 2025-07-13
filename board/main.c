@@ -29,8 +29,8 @@
 #include "can_comms.h"
 #include "main_comms.h"
 
-//#define HARDCODED_MODE SAFETY_HKG_ADAS_DRV_INTERCEPTOR
-#define HARDCODED_MODE SAFETY_SILENT
+#define HARDCODED_MODE SAFETY_HKG_ADAS_DRV_INTERCEPTOR
+//#define HARDCODED_MODE SAFETY_SILENT
 // ********************* Serial debugging *********************
 
 static bool check_started(void) {
