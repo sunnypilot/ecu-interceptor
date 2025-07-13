@@ -1,8 +1,9 @@
 #pragma once
 
-#include "safety/safety_declarations.h"
+#include "main_definitions.h"
 #include "safety/modes/hyundai_canfd.h"
 #include "safety/modes/defaults.h"
+#include "safety/safety_declarations.h"
 
 #define HYUNDAI_CANFD_ADAS_DRV_SCC_MSGS(bus) \
 {0x1A0, bus, 8, .check_relay = false},       \
@@ -29,8 +30,16 @@ void hyundai_canfd_adas_drv_interceptor_rx_hook(const CANPacket_t * to_push) {
     #ifdef DEBUG
       print("hyundai_canfd_adas_drv_interceptor_rx_hook: addr=0x"); puth(addr); print(", status="); puth(GET_BYTE(to_push, 3)); print("\n");
     #endif 
+    // this implies we'll be taken to safety_silent should OP die.
+    // we need to find a way so that we are taken to an alternate mode where we don't command
+    {
+      heartbeat_counter = 0U;
+      heartbeat_lost = false;
+      heartbeat_disabled = false;
+    }
     const unsigned short status = GET_BYTE(to_push, 3) & 0x3U;
-    if (status > 0) { 
+    if (status > 0) {
+      set_safety_mode(SAFETY_HKG_ADAS_DRV_INTERCEPTOR, 1);
       sunnypilot_detected_last = MICROSECOND_TIMER->CNT;
     }
   }
@@ -57,8 +66,6 @@ static int hyundai_canfd_adas_drv_interceptor_tamper_hook(int source_bus, int ad
 }
 
 safety_config hyundai_canfd_adas_interceptor_init(uint16_t param) {
-  UNUSED(param);
-
   static RxCheck hyundai_canfd_interceptor_rx_checks[] = {
     HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES()
   };
@@ -68,9 +75,9 @@ safety_config hyundai_canfd_adas_interceptor_init(uint16_t param) {
 
   ret.tx_msgs = NULL;
   ret.tx_msgs_len = 0;
-  ret.disable_forwarding = false;
-  controls_allowed = true;
-  print("hyundai_canfd_adas_interceptor_init initiailized with ["); puth(ret.rx_checks_len); print("]\n");
+  ret.disable_forwarding = param == 0;
+  controls_allowed = param != 0;
+  print("hyundai_canfd_adas_interceptor_init initialized, forwarding disabled ["); print(param == 0 ? "YES" : "NO"); print("]\n");
   
   return ret;
 }

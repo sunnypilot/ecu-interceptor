@@ -162,6 +162,7 @@ extern uint16_t current_safety_param;
 extern int current_safety_param_sp;
 extern safety_config current_safety_config;
 
+void set_safety_mode(uint16_t mode, uint16_t param);
 int safety_fwd_hook(int bus_num, int addr);
 int set_safety_hooks(uint16_t mode, uint16_t param);
 

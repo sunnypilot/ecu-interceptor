@@ -29,8 +29,6 @@
 #include "can_comms.h"
 #include "main_comms.h"
 
-#define HARDCODED_MODE SAFETY_HKG_ADAS_DRV_INTERCEPTOR
-//#define HARDCODED_MODE SAFETY_SILENT
 // ********************* Serial debugging *********************
 
 static bool check_started(void) {
@@ -106,6 +104,16 @@ void set_safety_mode(uint16_t mode, uint16_t param) {
       }
       can_silent = ALL_CAN_LIVE;
       break;
+    case SAFETY_HKG_ADAS_DRV_INTERCEPTOR:
+      const bool is_intercept_active = param != 0U;
+      set_intercept_relay(is_intercept_active, false);
+      heartbeat_counter = is_intercept_active ? 0U : heartbeat_counter;
+      heartbeat_lost = is_intercept_active ? false : heartbeat_lost;
+      if (current_board->harness_config->has_harness) {
+        current_board->set_can_mode(CAN_MODE_NORMAL);
+      }
+      can_silent = is_intercept_active ? ALL_CAN_LIVE : ALL_CAN_SILENT;
+      break;
     default:
       set_intercept_relay(true, false);
       heartbeat_counter = 0U;
@@ -123,8 +131,7 @@ bool is_car_safety_mode(uint16_t mode) {
   return (mode != SAFETY_SILENT) &&
          (mode != SAFETY_NOOUTPUT) &&
          (mode != SAFETY_ALLOUTPUT) &&
-         (mode != SAFETY_ELM327) &&
-         (mode != HARDCODED_MODE);
+         (mode != SAFETY_ELM327);
 }
 
 // ***************************** main code *****************************
@@ -255,8 +262,8 @@ static void tick_handler(void) {
           // clear heartbeat engaged state
           heartbeat_engaged = false;
 
-          if (current_safety_mode != HARDCODED_MODE) {
-            set_safety_mode(HARDCODED_MODE, 0U);
+          if (current_safety_mode != SAFETY_HKG_ADAS_DRV_INTERCEPTOR) {
+            set_safety_mode(SAFETY_HKG_ADAS_DRV_INTERCEPTOR, 0U);
           }
 
           if (power_save_status != POWER_SAVE_STATUS_ENABLED) {
@@ -339,7 +346,7 @@ int main(void) {
   }
 
   // init to SILENT and can silent
-  set_safety_mode(HARDCODED_MODE, 0U);
+  set_safety_mode(SAFETY_HKG_ADAS_DRV_INTERCEPTOR, 0U);
 
   // enable CAN TXs
   enable_can_transceivers(true);
