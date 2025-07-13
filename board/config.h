@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 
-//#define DEBUG
+#define DEBUG
 //#define DEBUG_UART
 //#define DEBUG_USB
 //#define DEBUG_SPI
