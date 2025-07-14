@@ -146,6 +146,10 @@ bool safety_rx_hook(const CANPacket_t *to_push) {
 
   bool valid = rx_msg_safety_check(to_push, &current_safety_config, current_hooks);
   bool whitelisted = get_addr_check_index(to_push, current_safety_config.rx_checks, current_safety_config.rx_checks_len) != -1;
+
+  // if ((!valid || !whitelisted)) {
+  //   print("Valid=["); puth(valid); print("] - whitelisted ["); puth(whitelisted); print("] for addr ");puth(GET_ADDR(to_push)); print("\n");
+  // }
   if (valid && whitelisted) {
     current_hooks->rx(to_push);
   }

@@ -18,6 +18,7 @@
 
 uint32_t sunnypilot_detected_last = 0;
 bool is_comma_alive = false;
+uint16_t init_param = 0;
 
 static const CanMsg HYUNDAI_CANFD_ADAS_DRV_TX_MSGS[] = {
   HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, false)
@@ -38,8 +39,11 @@ void hyundai_canfd_adas_drv_interceptor_rx_hook(const CANPacket_t * to_push) {
       heartbeat_disabled = false;
     }
     const unsigned short status = GET_BYTE(to_push, 3) & 0x3U;
-    if (status > 0) {
+    if (init_param != 1) {
+      print("Initializing safety to 1");
       set_safety_mode(SAFETY_HKG_ADAS_DRV_INTERCEPTOR, 1);
+    }
+    if (status > 0) {
       sunnypilot_detected_last = MICROSECOND_TIMER->CNT;
     }
   }
@@ -62,6 +66,7 @@ static int hyundai_canfd_adas_drv_interceptor_tamper_hook(int source_bus, int ad
 #endif
     return COMMA_BUS;
   }
+  
   return default_destination_bus;
 }
 
@@ -77,6 +82,7 @@ safety_config hyundai_canfd_adas_interceptor_init(uint16_t param) {
   ret.tx_msgs_len = 0;
   ret.disable_forwarding = param == 0;
   controls_allowed = param != 0;
+  init_param = param;
   print("hyundai_canfd_adas_interceptor_init initialized, forwarding disabled ["); print(param == 0 ? "YES" : "NO"); print("]\n");
   
   return ret;

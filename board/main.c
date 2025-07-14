@@ -148,7 +148,7 @@ static void __attribute__ ((noinline)) enable_fpu(void) {
 }
 
 // go into SILENT when heartbeat isn't received for this amount of seconds.
-#define HEARTBEAT_IGNITION_CNT_ON 5U
+#define HEARTBEAT_IGNITION_CNT_ON 2U
 #define HEARTBEAT_IGNITION_CNT_OFF 2U
 
 // called at 8Hz
@@ -177,7 +177,7 @@ static void tick_handler(void) {
       // re-init everything that uses harness status
       can_init_all();
       set_safety_mode(current_safety_mode, current_safety_param);
-      set_power_save_state(power_save_status);
+      // set_power_save_state(power_save_status);
     }
 
     // decimated to 1Hz
@@ -262,13 +262,13 @@ static void tick_handler(void) {
           // clear heartbeat engaged state
           heartbeat_engaged = false;
 
-          if (current_safety_mode != SAFETY_HKG_ADAS_DRV_INTERCEPTOR) {
+          if (current_safety_mode != SAFETY_HKG_ADAS_DRV_INTERCEPTOR || (current_safety_mode == SAFETY_HKG_ADAS_DRV_INTERCEPTOR && current_safety_param != 0U)) {
             set_safety_mode(SAFETY_HKG_ADAS_DRV_INTERCEPTOR, 0U);
           }
 
-          if (power_save_status != POWER_SAVE_STATUS_ENABLED) {
-            set_power_save_state(POWER_SAVE_STATUS_ENABLED);
-          }
+          // if (power_save_status != POWER_SAVE_STATUS_ENABLED) {
+          //   set_power_save_state(POWER_SAVE_STATUS_ENABLED);
+          // }
 
           // Also disable IR when the heartbeat goes missing
           current_board->set_ir_power(0U);
