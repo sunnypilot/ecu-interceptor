@@ -1,6 +1,7 @@
 #pragma once
 
 //#include "safety/helpers.h"
+#include "safety/safety_declarations_interceptor.h"
 #include "safety/safety_declarations.h"
 #include "safety/board/can.h"
 

@@ -16,8 +16,6 @@
 #define CAR_BUS 0
 #define COMMA_BUS 1 //A1, or L-can
 
-uint32_t sunnypilot_detected_last = 0;
-bool is_comma_alive = false;
 uint16_t init_param = 0;
 
 static const CanMsg HYUNDAI_CANFD_ADAS_DRV_TX_MSGS[] = {
