@@ -57,7 +57,6 @@ void debug_ring_callback(uart_ring *ring) {
   }
 }
 
-#define CAN_ESCC_OUTPUT 0x256
 void send_interceptor_heartbeat(void) {
   uint8_t dat[8] = {0};
   dat[0] = current_safety_mode & 0xFF;
@@ -67,8 +66,8 @@ void send_interceptor_heartbeat(void) {
   dat[4] = sp_seen_recently ? 1 : 0;
 
   CANPacket_t to_send;
-  to_send.extended = CAN_ESCC_OUTPUT >= 0x800 ? 1 : 0;
-  to_send.addr = CAN_ESCC_OUTPUT;
+  to_send.extended = INTERCEPTOR_HEARTBEAT_MSG_ADDR >= 0x800 ? 1 : 0;
+  to_send.addr = INTERCEPTOR_HEARTBEAT_MSG_ADDR;
   to_send.bus = 1;
   to_send.data_len_code = sizeof(dat);
   memcpy(to_send.data, dat, sizeof(dat));
@@ -188,6 +187,7 @@ static void tick_handler(void) {
     harness_tick();
     simple_watchdog_kick();
     sound_tick();
+    send_interceptor_heartbeat();
 
     // re-init everything that uses harness status
     if (harness.status != prev_harness_status) {
@@ -263,7 +263,6 @@ static void tick_handler(void) {
       }
 
       if (!heartbeat_disabled) {
-        send_interceptor_heartbeat();
         // if the heartbeat has been gone for a while, go to SILENT safety mode and enter power save
         if (heartbeat_counter >= (check_started() ? HEARTBEAT_IGNITION_CNT_ON : HEARTBEAT_IGNITION_CNT_OFF)) {
           print("device hasn't sent a heartbeat for 0x");
