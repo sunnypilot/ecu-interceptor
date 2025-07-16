@@ -45,18 +45,21 @@ static int hyundai_canfd_adas_drv_interceptor_tamper_hook(int source_bus, int ad
 }
 
 safety_config hyundai_canfd_adas_interceptor_init(uint16_t param) {
+  hyundai_common_init(param);
   safety_config ret;
 
   // static RxCheck hyundai_canfd_interceptor_rx_checks[] = { };
   // SET_RX_CHECKS(hyundai_canfd_interceptor_rx_checks, ret);
+  ret.rx_checks = NULL;
+  ret.rx_checks_len = 0;
 
   ret.tx_msgs = NULL;
   ret.tx_msgs_len = 0;
 
   // with param we will decide what functionalities are allowed, for now, we assume that non zero param means full functionality
-  ret.disable_forwarding = param == 0;
-  controls_allowed = param != 0;
-  print("hyundai_canfd_adas_interceptor_init initialized, forwarding disabled ["); print(param == 0 ? "YES" : "NO"); print("]\n");
+  ret.disable_forwarding = !adas_drv_ecu_long_interceptor_enabled;
+  controls_allowed = adas_drv_ecu_long_interceptor_enabled;
+  print("hyundai_canfd_adas_interceptor_init initialized, forwarding disabled ["); print(ret.disable_forwarding ? "YES" : "NO"); print("]\n");
   
   return ret;
 }

@@ -5,6 +5,10 @@
 extern uint16_t hyundai_canfd_crc_lut[256];
 uint16_t hyundai_canfd_crc_lut[256];
 
+// common state
+extern bool adas_drv_ecu_long_interceptor_enabled;
+bool adas_drv_ecu_long_interceptor_enabled = false;
+
 #ifdef CANFD
 uint32_t hyundai_common_canfd_compute_checksum(const CANPacket_t *to_push) {
   int len = GET_LEN(to_push);
@@ -31,3 +35,8 @@ uint32_t hyundai_common_canfd_compute_checksum(const CANPacket_t *to_push) {
   return crc;
 }
 #endif
+
+void hyundai_common_init(uint16_t param) {
+  const int ADAS_DRV_ECU_LONG_INTERCEPTOR = 8;
+  adas_drv_ecu_long_interceptor_enabled = GET_FLAG(param, ADAS_DRV_ECU_LONG_INTERCEPTOR);
+}
