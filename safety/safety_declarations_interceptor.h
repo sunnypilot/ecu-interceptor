@@ -13,8 +13,8 @@ typedef struct {
 
 static inline AdasDrvInterceptOptMsg unpack_interceptor_opt_msg(const CANPacket_t * msg) {
   AdasDrvInterceptOptMsg adas = {
-    .requested_safety_mode = (uint16_t)GET_BYTES(msg, 3, 4),
-    .requested_safety_param = (uint16_t)GET_BYTES(msg, 5, 6),
+    .requested_safety_mode = GET_BYTE(msg, 3) | GET_BYTE(msg, 4),
+    .requested_safety_param = GET_BYTE(msg, 5) | GET_BYTE(msg, 6)
   };
   return adas;
 }

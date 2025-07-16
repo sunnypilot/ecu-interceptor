@@ -98,7 +98,7 @@ void set_safety_mode(uint16_t mode, uint16_t param) {
       if (current_board->harness_config->has_harness) {
         current_board->set_can_mode(CAN_MODE_NORMAL);
       }
-      can_silent = ALL_CAN_SILENT;
+      can_silent = ALL_CAN_LIVE; // stock is ALL_CAN_SILENT
       break;
     case SAFETY_NOOUTPUT:
       set_intercept_relay(false, false);
