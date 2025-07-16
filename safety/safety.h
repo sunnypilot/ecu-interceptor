@@ -142,16 +142,36 @@ static bool rx_msg_safety_check(const CANPacket_t *to_push,
   return is_msg_valid(cfg->rx_checks, index);
 }
 
+static inline void handle_interceptor_heartbeat_opt(const CANPacket_t *to_push) {
+  AdasDrvInterceptOptMsg opt_msg = unpack_interceptor_opt_msg(to_push);
+
+  // reset the heartbeat counter and flags since we received a valid heartbeat
+  heartbeat_counter = 0U;
+  heartbeat_lost = false;
+  heartbeat_disabled = false;
+  sunnypilot_detected_last = MICROSECOND_TIMER->CNT;
+  
+  // update the safety mode and param if they differ from the current ones
+  if (current_safety_mode != opt_msg.requested_safety_mode || current_safety_param != opt_msg.requested_safety_param) {
+#ifdef DEBUG
+    print("ADAS_DRV_INTERCEPTOR_OPT_MSG: requested_safety_mode="); puth(opt_msg.requested_safety_mode);
+    print(", requested_safety_param="); puth(opt_msg.requested_safety_param); print("\n");
+#endif
+    set_safety_mode(opt_msg.requested_safety_mode, opt_msg.requested_safety_param);
+  }
+}
+
 bool safety_rx_hook(const CANPacket_t *to_push) {
   bool controls_allowed_prev = controls_allowed;
 
   bool valid = rx_msg_safety_check(to_push, &current_safety_config, current_hooks);
   bool whitelisted = get_addr_check_index(to_push, current_safety_config.rx_checks, current_safety_config.rx_checks_len) != -1;
 
-  // if ((!valid || !whitelisted)) {
-  //   print("Valid=["); puth(valid); print("] - whitelisted ["); puth(whitelisted); print("] for addr ");puth(GET_ADDR(to_push)); print("\n");
-  // }
-  if (valid && whitelisted) {
+  // TODO: We'd benefit from using whitelisted to make sure the message integrity is valid.
+  //  However, I still have to learn how to use the checksum properly, so im bypassing it for now. 
+  if (valid && GET_ADDR(to_push) == ADAS_DRV_INTERCEPTOR_OPT_MSG_ADDR) {
+    handle_interceptor_heartbeat_opt(to_push);
+  } else if (valid && whitelisted) {
     current_hooks->rx(to_push);
   }
 

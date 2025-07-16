@@ -64,11 +64,7 @@ void send_interceptor_heartbeat(void) {
   dat[1] = (current_safety_mode >> 8) & 0xFF;
   dat[2] = current_safety_param & 0xFF;
   dat[3] = (current_safety_param >> 8) & 0xFF;
-  dat[4] = is_comma_alive ? 1 : 0;
-  // dat[4] = sunnypilot_detected_last & 0xFF;
-  // dat[5] = (sunnypilot_detected_last >> 8) & 0xFF;
-  // dat[6] = (sunnypilot_detected_last >> 16) & 0xFF;
-  // dat[7] = (sunnypilot_detected_last >> 24) & 0xFF;
+  dat[4] = sp_seen_recently ? 1 : 0;
 
   CANPacket_t to_send;
   to_send.extended = CAN_ESCC_OUTPUT >= 0x800 ? 1 : 0;
@@ -287,10 +283,11 @@ static void tick_handler(void) {
           // clear heartbeat engaged state
           heartbeat_engaged = false;
 
-          if (current_safety_mode != SAFETY_HKG_ADAS_DRV_INTERCEPTOR || (current_safety_mode == SAFETY_HKG_ADAS_DRV_INTERCEPTOR && current_safety_param != 0U)) {
-            set_safety_mode(SAFETY_HKG_ADAS_DRV_INTERCEPTOR, 0U);
+          if (current_safety_mode != SAFETY_SILENT) {
+            set_safety_mode(SAFETY_SILENT, 0U);
           }
 
+          // We do NOT want power save because we can't listen to CAN, and thus we can't react to SP requesting safety mode changes.
           // if (power_save_status != POWER_SAVE_STATUS_ENABLED) {
           //   set_power_save_state(POWER_SAVE_STATUS_ENABLED);
           // }
@@ -371,7 +368,7 @@ int main(void) {
   }
 
   // init to SILENT and can silent
-  set_safety_mode(SAFETY_HKG_ADAS_DRV_INTERCEPTOR, 0U);
+  set_safety_mode(SAFETY_SILENT, 0U);
 
   // enable CAN TXs
   enable_can_transceivers(true);

@@ -9,8 +9,9 @@
 {0x1A0, bus, 8, .check_relay = false},       \
 
 #define HEARTBEAT_MSG_ADDR 0x258
-#define HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES() \
-{.msg = {{0x258, 1, 8, .max_counter=0, .ignore_counter = true, .ignore_checksum = true, .ignore_quality_flag = true, .frequency=100U}}}
+// No need for this, we no longer really checking the rx here
+// #define HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES() 
+// {.msg = {{0x258, 1, 8, .max_counter=0, .ignore_counter = true, .ignore_checksum = true, .ignore_quality_flag = true, .frequency=100U}}}
 
 #define ADAS_DRV_BUS 2
 #define CAR_BUS 0
@@ -22,31 +23,6 @@ static const CanMsg HYUNDAI_CANFD_ADAS_DRV_TX_MSGS[] = {
   HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, false)
 };
 
-void hyundai_canfd_adas_drv_interceptor_rx_hook(const CANPacket_t * to_push) {
-  const int addr = GET_ADDR(to_push);
-
-  if (addr == HEARTBEAT_MSG_ADDR) {
-    #ifdef DEBUG
-      print("hyundai_canfd_adas_drv_interceptor_rx_hook: addr=0x"); puth(addr); print(", status="); puth(GET_BYTE(to_push, 3)); print("\n");
-    #endif 
-    // this implies we'll be taken to safety_silent should OP die.
-    // we need to find a way so that we are taken to an alternate mode where we don't command
-    {
-      heartbeat_counter = 0U;
-      heartbeat_lost = false;
-      heartbeat_disabled = false;
-    }
-    const unsigned short status = GET_BYTE(to_push, 3) & 0x3U;
-    if (init_param != 1) {
-      print("Initializing safety to 1");
-      set_safety_mode(SAFETY_HKG_ADAS_DRV_INTERCEPTOR, 1);
-    }
-    if (status > 0) {
-      sunnypilot_detected_last = MICROSECOND_TIMER->CNT;
-    }
-  }
-}
-
 static int hyundai_canfd_adas_drv_interceptor_tamper_hook(int source_bus, int addr, int default_destination_bus) {
   const bool is_scc_msg = addr == 0x1A0;
   if (source_bus == COMMA_BUS || !is_scc_msg)
@@ -54,10 +30,10 @@ static int hyundai_canfd_adas_drv_interceptor_tamper_hook(int source_bus, int ad
   
   // Update the scc_block_allowed status based on elapsed time
   const uint32_t ts_elapsed = get_ts_elapsed(MICROSECOND_TIMER->CNT, sunnypilot_detected_last);
-  is_comma_alive = (ts_elapsed <= 150000);
+  sp_seen_recently = (ts_elapsed <= 150000);
 
   // If the source bus is ADAS_DRV_BUS, we assume that the message is coming from the ADAS unit
-  const bool should_block = is_comma_alive && source_bus == ADAS_DRV_BUS;
+  const bool should_block = sp_seen_recently && source_bus == ADAS_DRV_BUS;
   if (should_block) {
 #ifdef DEBUG
     print("hyundai_canfd_adas_drv_interceptor_tamper_hook: redirecting to COMMA_BUS, originally meant for bus "); puth(source_bus); print("\n");
@@ -69,18 +45,17 @@ static int hyundai_canfd_adas_drv_interceptor_tamper_hook(int source_bus, int ad
 }
 
 safety_config hyundai_canfd_adas_interceptor_init(uint16_t param) {
-  static RxCheck hyundai_canfd_interceptor_rx_checks[] = {
-    HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES()
-  };
-
   safety_config ret;
-  SET_RX_CHECKS(hyundai_canfd_interceptor_rx_checks, ret);
+
+  // static RxCheck hyundai_canfd_interceptor_rx_checks[] = { };
+  // SET_RX_CHECKS(hyundai_canfd_interceptor_rx_checks, ret);
 
   ret.tx_msgs = NULL;
   ret.tx_msgs_len = 0;
+
+  // with param we will decide what functionalities are allowed, for now, we assume that non zero param means full functionality
   ret.disable_forwarding = param == 0;
   controls_allowed = param != 0;
-  init_param = param;
   print("hyundai_canfd_adas_interceptor_init initialized, forwarding disabled ["); print(param == 0 ? "YES" : "NO"); print("]\n");
   
   return ret;
@@ -90,9 +65,7 @@ safety_config hyundai_canfd_adas_interceptor_init(uint16_t param) {
 // but we have a different setup here, and no messages come from OP.
 const safety_hooks hyundai_canfd_adas_drv_interceptor_hooks = {
   .init = hyundai_canfd_adas_interceptor_init,
-  .rx = hyundai_canfd_adas_drv_interceptor_rx_hook,
   .tamper = hyundai_canfd_adas_drv_interceptor_tamper_hook,
-  // .fwd = hyundai_canfd_adas_drv_interceptor_fwd_hook,
   .get_counter = hyundai_canfd_get_counter,
   .get_checksum = hyundai_canfd_get_checksum,
   .compute_checksum = hyundai_common_canfd_compute_checksum,
