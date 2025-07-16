@@ -59,11 +59,11 @@ void debug_ring_callback(uart_ring *ring) {
 
 void send_interceptor_heartbeat(void) {
   uint8_t dat[8] = {0};
-  dat[0] = current_safety_mode & 0xFF;
-  dat[1] = (current_safety_mode >> 8) & 0xFF;
-  dat[2] = current_safety_param & 0xFF;
-  dat[3] = (current_safety_param >> 8) & 0xFF;
-  dat[4] = sp_seen_recently ? 1 : 0;
+  dat[3] = (current_safety_mode >> 8) & 0xFF;
+  dat[4] = current_safety_mode & 0xFF;
+  dat[5] = (current_safety_param >> 8) & 0xFF;
+  dat[6] = current_safety_param & 0xFF;
+  dat[7] = sp_seen_recently ? 1 : 0;
 
   CANPacket_t to_send;
   to_send.extended = INTERCEPTOR_HEARTBEAT_MSG_ADDR >= 0x800 ? 1 : 0;
