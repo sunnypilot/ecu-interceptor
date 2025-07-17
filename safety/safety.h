@@ -245,6 +245,7 @@ int safety_fwd_hook(int bus_num, int addr) {
   int destination_bus = get_fwd_bus(bus_num);
   if (!blocked && (current_hooks->tamper != NULL)) {
     destination_bus = current_hooks->tamper(bus_num, addr, destination_bus);
+    blocked = (destination_bus == -1);
   }
   
   if (!blocked) {

@@ -5,9 +5,6 @@
 #include "safety/modes/defaults.h"
 #include "safety/safety_declarations.h"
 
-#define HYUNDAI_CANFD_ADAS_DRV_SCC_MSGS(bus) \
-{0x1A0, bus, 8, .check_relay = false},       \
-
 #define HEARTBEAT_MSG_ADDR 0x258
 // No need for this, we no longer really checking the rx here
 // #define HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES() 
@@ -25,6 +22,8 @@ static const CanMsg HYUNDAI_CANFD_ADAS_DRV_TX_MSGS[] = {
 
 static int hyundai_canfd_adas_drv_interceptor_tamper_hook(int source_bus, int addr, int default_destination_bus) {
   const bool is_scc_msg = addr == 0x1A0;
+
+  // Even if we wanted to, there's nothing we can do because we don't intercept this bus. (can't block)
   if (source_bus == COMMA_BUS || !is_scc_msg)
     return default_destination_bus;
   
