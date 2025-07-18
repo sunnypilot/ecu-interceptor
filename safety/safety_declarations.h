@@ -9,7 +9,7 @@
 #define SAFETY_ALLOUTPUT 2U
 #define SAFETY_NOOUTPUT 3U
 #define SAFETY_BODY 4U
-//#define SAFETY_HYUNDAI_CANFD 5U
+#define SAFETY_HKG_ADAS_DRV_INTERCEPTOR 5U
 
 #define GET_BIT(msg, b) ((bool)!!(((msg)->data[((b) / 8U)] >> ((b) % 8U)) & 0x1U))
 #define GET_BYTE(msg, b) ((msg)->data[(b)])
@@ -110,13 +110,15 @@ typedef bool (*get_quality_flag_valid_t)(const CANPacket_t *to_push);
 typedef safety_config (*safety_hook_init)(uint16_t param);
 typedef void (*rx_hook)(const CANPacket_t *to_push);
 typedef bool (*tx_hook)(const CANPacket_t *to_send);  // returns true if the message is allowed
-typedef bool (*fwd_hook)(int bus_num, int addr);      // returns true if the message should be blocked from forwarding
+// typedef bool (*fwd_hook)(int bus_num, int addr);      // returns true if the message should be blocked from forwarding
+typedef int (*tamper_hook)(int source_bus, int addr, int calculated_destination);
 
 typedef struct {
   safety_hook_init init;
   rx_hook rx;
   tx_hook tx;
-  fwd_hook fwd;
+  // fwd_hook fwd;
+  tamper_hook tamper;
   get_checksum_t get_checksum;
   compute_checksum_t compute_checksum;
   get_counter_t get_counter;
@@ -160,6 +162,7 @@ extern uint16_t current_safety_param;
 extern int current_safety_param_sp;
 extern safety_config current_safety_config;
 
+void set_safety_mode(uint16_t mode, uint16_t param);
 int safety_fwd_hook(int bus_num, int addr);
 int set_safety_hooks(uint16_t mode, uint16_t param);
 
@@ -167,4 +170,3 @@ extern const safety_hooks body_hooks;
 extern const safety_hooks elm327_hooks;
 extern const safety_hooks nooutput_hooks;
 extern const safety_hooks alloutput_hooks;
-//extern const safety_hooks hyundai_canfd_hooks;

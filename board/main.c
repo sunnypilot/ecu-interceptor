@@ -29,7 +29,6 @@
 #include "can_comms.h"
 #include "main_comms.h"
 
-
 // ********************* Serial debugging *********************
 
 static bool check_started(void) {
@@ -58,6 +57,25 @@ void debug_ring_callback(uart_ring *ring) {
   }
 }
 
+void send_interceptor_heartbeat(void) {
+  uint8_t dat[8] = {0};
+  dat[3] = (current_safety_mode >> 8) & 0xFF;
+  dat[4] = current_safety_mode & 0xFF;
+  dat[5] = (current_safety_param >> 8) & 0xFF;
+  dat[6] = current_safety_param & 0xFF;
+  dat[7] = sp_seen_recently ? 1 : 0;
+
+  CANPacket_t to_send;
+  to_send.extended = INTERCEPTOR_HEARTBEAT_MSG_ADDR >= 0x800 ? 1 : 0;
+  to_send.addr = INTERCEPTOR_HEARTBEAT_MSG_ADDR;
+  to_send.bus = 1;
+  to_send.data_len_code = sizeof(dat);
+  memcpy(to_send.data, dat, sizeof(dat));
+  
+  can_set_checksum(&to_send);
+  can_send(&to_send, 1, true);
+}
+
 // ****************************** safety mode ******************************
 
 // this is the only way to leave silent mode
@@ -80,7 +98,7 @@ void set_safety_mode(uint16_t mode, uint16_t param) {
       if (current_board->harness_config->has_harness) {
         current_board->set_can_mode(CAN_MODE_NORMAL);
       }
-      can_silent = ALL_CAN_SILENT;
+      can_silent = ALL_CAN_LIVE; // stock is ALL_CAN_SILENT
       break;
     case SAFETY_NOOUTPUT:
       set_intercept_relay(false, false);
@@ -104,6 +122,16 @@ void set_safety_mode(uint16_t mode, uint16_t param) {
         }
       }
       can_silent = ALL_CAN_LIVE;
+      break;
+    case SAFETY_HKG_ADAS_DRV_INTERCEPTOR:
+      const bool is_intercept_active = param != 0U;
+      set_intercept_relay(is_intercept_active, false);
+      heartbeat_counter = is_intercept_active ? 0U : heartbeat_counter;
+      heartbeat_lost = is_intercept_active ? false : heartbeat_lost;
+      if (current_board->harness_config->has_harness) {
+        current_board->set_can_mode(CAN_MODE_NORMAL);
+      }
+      can_silent = is_intercept_active ? ALL_CAN_LIVE : ALL_CAN_SILENT;
       break;
     default:
       set_intercept_relay(true, false);
@@ -139,7 +167,7 @@ static void __attribute__ ((noinline)) enable_fpu(void) {
 }
 
 // go into SILENT when heartbeat isn't received for this amount of seconds.
-#define HEARTBEAT_IGNITION_CNT_ON 5U
+#define HEARTBEAT_IGNITION_CNT_ON 2U
 #define HEARTBEAT_IGNITION_CNT_OFF 2U
 
 // called at 8Hz
@@ -159,6 +187,7 @@ static void tick_handler(void) {
     harness_tick();
     simple_watchdog_kick();
     sound_tick();
+    send_interceptor_heartbeat();
 
     // re-init everything that uses harness status
     if (harness.status != prev_harness_status) {
@@ -168,7 +197,7 @@ static void tick_handler(void) {
       // re-init everything that uses harness status
       can_init_all();
       set_safety_mode(current_safety_mode, current_safety_param);
-      set_power_save_state(power_save_status);
+      // set_power_save_state(power_save_status);
     }
 
     // decimated to 1Hz
@@ -257,9 +286,10 @@ static void tick_handler(void) {
             set_safety_mode(SAFETY_SILENT, 0U);
           }
 
-          if (power_save_status != POWER_SAVE_STATUS_ENABLED) {
-            set_power_save_state(POWER_SAVE_STATUS_ENABLED);
-          }
+          // We do NOT want power save because we can't listen to CAN, and thus we can't react to SP requesting safety mode changes.
+          // if (power_save_status != POWER_SAVE_STATUS_ENABLED) {
+          //   set_power_save_state(POWER_SAVE_STATUS_ENABLED);
+          // }
 
           // Also disable IR when the heartbeat goes missing
           current_board->set_ir_power(0U);

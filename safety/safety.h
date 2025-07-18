@@ -1,6 +1,7 @@
 #pragma once
 
 //#include "safety/helpers.h"
+#include "safety/safety_declarations_interceptor.h"
 #include "safety/safety_declarations.h"
 #include "safety/board/can.h"
 
@@ -8,11 +9,7 @@
 #include "safety/modes/defaults.h"
 #include "safety/modes/elm327.h"
 #include "safety/modes/body.h"
-
-// CAN-FD only safety modes
-//#ifdef CANFD
-//#include "safety/modes/hyundai_canfd.h"
-//#endif
+#include "main_definitions.h"
 
 uint32_t GET_BYTES(const CANPacket_t *msg, int start, int len) {
   uint32_t ret = 0U;
@@ -141,12 +138,36 @@ static bool rx_msg_safety_check(const CANPacket_t *to_push,
   return is_msg_valid(cfg->rx_checks, index);
 }
 
+static inline void handle_interceptor_heartbeat_opt(const CANPacket_t *to_push) {
+  AdasDrvInterceptOptMsg opt_msg = unpack_interceptor_opt_msg(to_push);
+
+  // reset the heartbeat counter and flags since we received a valid heartbeat
+  heartbeat_counter = 0U;
+  heartbeat_lost = false;
+  heartbeat_disabled = false;
+  sunnypilot_detected_last = MICROSECOND_TIMER->CNT;
+  
+  // update the safety mode and param if they differ from the current ones
+  if (current_safety_mode != opt_msg.requested_safety_mode || current_safety_param != opt_msg.requested_safety_param) {
+#ifdef DEBUG
+    print("ADAS_DRV_INTERCEPTOR_OPT_MSG: requested_safety_mode="); puth(opt_msg.requested_safety_mode);
+    print(", requested_safety_param="); puth(opt_msg.requested_safety_param); print("\n");
+#endif
+    set_safety_mode(opt_msg.requested_safety_mode, opt_msg.requested_safety_param);
+  }
+}
+
 bool safety_rx_hook(const CANPacket_t *to_push) {
   bool controls_allowed_prev = controls_allowed;
 
   bool valid = rx_msg_safety_check(to_push, &current_safety_config, current_hooks);
   bool whitelisted = get_addr_check_index(to_push, current_safety_config.rx_checks, current_safety_config.rx_checks_len) != -1;
-  if (valid && whitelisted) {
+
+  // TODO: We'd benefit from using whitelisted to make sure the message integrity is valid.
+  //  However, I still have to learn how to use the checksum properly, so im bypassing it for now. 
+  if (valid && GET_ADDR(to_push) == ADAS_DRV_INTERCEPTOR_OPT_MSG_ADDR) {
+    handle_interceptor_heartbeat_opt(to_push);
+  } else if (valid && whitelisted) {
     current_hooks->rx(to_push);
   }
 
@@ -216,7 +237,13 @@ int safety_fwd_hook(int bus_num, int addr) {
 
   // Block messages that are being checked for relay malfunctions. Safety modes can opt out of this
   // in the case of selective AEB forwarding
-  const int destination_bus = get_fwd_bus(bus_num);
+
+  int destination_bus = get_fwd_bus(bus_num);
+  if (!blocked && (current_hooks->tamper != NULL)) {
+    destination_bus = current_hooks->tamper(bus_num, addr, destination_bus);
+    blocked = (destination_bus == -1);
+  }
+  
   if (!blocked) {
     for (int i = 0; i < current_safety_config.tx_msgs_len; i++) {
       const CanMsg *m = &current_safety_config.tx_msgs[i];
@@ -225,10 +252,6 @@ int safety_fwd_hook(int bus_num, int addr) {
         break;
       }
     }
-  }
-
-  if (!blocked && (current_hooks->fwd != NULL)) {
-    blocked = current_hooks->fwd(bus_num, addr);
   }
 
   return blocked ? -1 : destination_bus;
@@ -328,9 +351,6 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
     {SAFETY_ELM327, &elm327_hooks},
     {SAFETY_NOOUTPUT, &nooutput_hooks},
     {SAFETY_BODY, &body_hooks},
-// #ifdef CANFD
-//     {SAFETY_HYUNDAI_CANFD, &hyundai_canfd_hooks},
-// #endif
 #ifdef ALLOW_DEBUG
     {SAFETY_ALLOUTPUT, &alloutput_hooks},
 #endif

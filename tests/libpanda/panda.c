@@ -5,6 +5,7 @@
 bool can_init(uint8_t can_number) { return true; }
 void process_can(uint8_t can_number) { }
 //int safety_tx_hook(CANPacket_t *to_send) { return 1; }
+void set_safety_mode(uint16_t mode, uint16_t param) { }
 
 typedef struct harness_configuration harness_configuration;
 void refresh_can_tx_slots_available(void);
