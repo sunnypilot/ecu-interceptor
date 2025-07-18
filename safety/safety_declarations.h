@@ -170,4 +170,3 @@ extern const safety_hooks body_hooks;
 extern const safety_hooks elm327_hooks;
 extern const safety_hooks nooutput_hooks;
 extern const safety_hooks alloutput_hooks;
-extern const safety_hooks hyundai_canfd_adas_drv_interceptor_hooks;
