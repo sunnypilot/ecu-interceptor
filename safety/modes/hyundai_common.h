@@ -10,6 +10,21 @@ extern bool adas_drv_ecu_long_interceptor_enabled;
 bool adas_drv_ecu_long_interceptor_enabled = false;
 
 #ifdef CANFD
+static uint8_t hyundai_canfd_get_counter(const CANPacket_t *to_push) {
+  uint8_t ret = 0;
+  if (GET_LEN(to_push) == 8U) {
+    ret = GET_BYTE(to_push, 1) >> 4;
+  } else {
+    ret = GET_BYTE(to_push, 2);
+  }
+  return ret;
+}
+
+static uint32_t hyundai_canfd_get_checksum(const CANPacket_t *to_push) {
+  uint32_t chksum = GET_BYTE(to_push, 0) | (GET_BYTE(to_push, 1) << 8);
+  return chksum;
+}
+
 uint32_t hyundai_common_canfd_compute_checksum(const CANPacket_t *to_push) {
   int len = GET_LEN(to_push);
   uint32_t address = GET_ADDR(to_push);

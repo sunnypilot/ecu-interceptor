@@ -1,24 +1,14 @@
 #pragma once
 
 #include "main_definitions.h"
-#include "safety/modes/hyundai_canfd.h"
+#include "safety/modes/hyundai_common.h"
 #include "safety/modes/defaults.h"
 #include "safety/safety_declarations.h"
 
 #define HEARTBEAT_MSG_ADDR 0x258
-// No need for this, we no longer really checking the rx here
-// #define HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES() 
-// {.msg = {{0x258, 1, 8, .max_counter=0, .ignore_counter = true, .ignore_checksum = true, .ignore_quality_flag = true, .frequency=100U}}}
-
 #define ADAS_DRV_BUS 2
 #define CAR_BUS 0
 #define COMMA_BUS 1 //A1, or L-can
-
-uint16_t init_param = 0;
-
-static const CanMsg HYUNDAI_CANFD_ADAS_DRV_TX_MSGS[] = {
-  HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, false)
-};
 
 static int hyundai_canfd_adas_drv_interceptor_tamper_hook(int source_bus, int addr, int default_destination_bus) {
   const bool is_scc_msg = addr == 0x1A0;
