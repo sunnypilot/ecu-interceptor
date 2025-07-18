@@ -9,6 +9,7 @@
 #include "safety/modes/defaults.h"
 #include "safety/modes/elm327.h"
 #include "safety/modes/body.h"
+#include "main_definitions.h"
 
 // CAN-FD only safety modes
 #ifdef CANFD
